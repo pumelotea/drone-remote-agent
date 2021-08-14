@@ -71,7 +71,10 @@ steps:
       publicKeyFilePath: /dra/rsa_public_key.pem
       script:
         - docker pull 10.10.0.14:5000/nginx:1.15
-        - docker run -d --name=test-nginx-a -p8877:80 10.10.0.14:5000/nginx:1.15
+        - docker run -d \
+        - --name=test-nginx-a \
+        - -p8877:80 \
+        - 10.10.0.14:5000/nginx:1.15
 ```
 
 ## 参数表

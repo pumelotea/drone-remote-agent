@@ -51,6 +51,8 @@ func parseVar() {
 	sshPassword = NotEmptyCopy(sshPassword, *_sshPassword)
 	scripts = NotEmptyCopy(scripts, *_script)
 
+	scripts = CombineScriptIntoOneLine(scripts)
+
 }
 
 func parseEnvVar() {

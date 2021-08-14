@@ -2,7 +2,9 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
+	"strings"
 )
 
 func ReadAll(filePth string) ([]byte, error) {
@@ -13,9 +15,28 @@ func ReadAll(filePth string) ([]byte, error) {
 	return ioutil.ReadAll(f)
 }
 
-func NotEmptyCopy(dst string,src string) string {
-	if src == ""{
+func NotEmptyCopy(dst string, src string) string {
+	if src == "" {
 		return dst
 	}
 	return src
+}
+
+func CombineScriptIntoOneLine(script string) string {
+	if scripts == "" {
+		return ""
+	}
+	oneline := ""
+	list := strings.Split(script, ";")
+	for i := 0; i < len(list); i++ {
+		trimed := strings.TrimRight(list[i], " ")
+		log.Println(trimed)
+		if trimed[len(trimed)-1:] == "\\" {
+			oneline += trimed[0 : len(trimed)-1]
+		} else {
+			oneline += trimed + ";"
+		}
+	}
+	log.Println(oneline)
+	return oneline
 }
