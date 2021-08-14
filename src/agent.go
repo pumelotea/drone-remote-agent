@@ -34,7 +34,7 @@ func NewAgent(addr string, privateKeyFilePath string) *Agent {
 	// 加载证书-私钥
 	err := agent.loadPrivateKey()
 	if err != nil {
-		log.Fatalln("[Agent][Load PrivateKey]",err)
+		log.Fatalln("[Agent][Load PrivateKey]", err)
 	}
 	return agent
 }
@@ -47,7 +47,7 @@ func (agent *Agent) Serve() error {
 func (agent *Agent) wsHandle(w http.ResponseWriter, r *http.Request) {
 	conn, err := agent.wsUpGrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("[Agent][Upgrade WebSocket]",err)
+		log.Println("[Agent][Upgrade WebSocket]", err)
 		return
 	}
 
@@ -56,14 +56,14 @@ func (agent *Agent) wsHandle(w http.ResponseWriter, r *http.Request) {
 		for {
 			_, data, err := conn.ReadMessage()
 			if err != nil {
-				log.Println("[Agent][WS ReadMessage]",err)
+				log.Println("[Agent][WS ReadMessage]", err)
 				break
 			}
 			log.Println("[Agent][WS Message Raw]", string(data))
 
 			dData, err := agent.decode(data)
 			if err != nil {
-				log.Println("[Agent][Decode]",err)
+				log.Println("[Agent][Decode]", err)
 				break
 			}
 			log.Println("[Agent][WS Message Decoded]", dData) //dData 是一个普通string json
@@ -82,18 +82,18 @@ func (agent *Agent) wsHandle(w http.ResponseWriter, r *http.Request) {
 			//执行远程命令
 			err = agent.executeOverSSH(conn, cmd, reqCmd)
 			if err != nil {
-				log.Println("[Agent][ExecuteOverSSH]",err)
+				log.Println("[Agent][ExecuteOverSSH]", err)
 				break
 			}
 		}
-		log.Println("[Agent]","Close WebSocket")
+		log.Println("[Agent]", "Close WebSocket")
 	}()
 }
 
 func (agent *Agent) loadPrivateKey() error {
 	b, err := ReadAll(agent.PrivateKeyFilePath)
 	if err != nil {
-		log.Println("[Agent][ReadFile]",err)
+		log.Println("[Agent][ReadFile]", err)
 		return err
 	}
 	agent.PrivateKey = string(b)
@@ -103,7 +103,7 @@ func (agent *Agent) loadPrivateKey() error {
 func (agent *Agent) decode(raw []byte) (string, error) {
 	dData, err := gorsa.PriKeyDecrypt(string(raw), agent.PrivateKey)
 	if err != nil {
-		log.Println("[Agent][Decode]",err)
+		log.Println("[Agent][Decode]", err)
 		return "", err
 	}
 	return dData, nil
@@ -112,7 +112,7 @@ func (agent *Agent) decode(raw []byte) (string, error) {
 func (agent *Agent) encode(raw []byte) (string, error) {
 	eData, err := gorsa.PriKeyEncrypt(string(raw), agent.PrivateKey)
 	if err != nil {
-		log.Println("[Agent][Encode]",err)
+		log.Println("[Agent][Encode]", err)
 		return "", err
 	}
 	return eData, nil
@@ -126,13 +126,13 @@ func (agent *Agent) wsWrite(conn *websocket.Conn, cmd int64, resCmd *ResCmd) err
 
 	b, err := json.Marshal(res)
 	if err != nil {
-		log.Println("[Agent][JSON Marshal]",err)
+		log.Println("[Agent][JSON Marshal]", err)
 		return err
 	}
 
 	eData, err := agent.encode(b)
 	if err != nil {
-		log.Println("[Agent][Encode]",err)
+		log.Println("[Agent][Encode]", err)
 		return err
 	}
 
@@ -146,13 +146,13 @@ func (agent *Agent) executeOverSSH(conn *websocket.Conn, cmd int64, reqCmd *ReqC
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	})
 	if err != nil {
-		log.Println("[Agent][SSH Dial]",err)
+		log.Println("[Agent][SSH Dial]", err)
 		err := agent.wsWrite(conn, cmd, &ResCmd{
 			Content:  err.Error(),
 			ExitCode: 1,
 		})
 		if err != nil {
-			log.Println("[Agent][WS Write]",err)
+			log.Println("[Agent][WS Write]", err)
 			return err
 		}
 		return err
@@ -160,13 +160,13 @@ func (agent *Agent) executeOverSSH(conn *websocket.Conn, cmd int64, reqCmd *ReqC
 
 	session, err := client.NewSession()
 	if err != nil {
-		log.Println("[Agent][SSH NewSession]",err)
+		log.Println("[Agent][SSH NewSession]", err)
 		err := agent.wsWrite(conn, cmd, &ResCmd{
 			Content:  err.Error(),
 			ExitCode: 2,
 		})
 		if err != nil {
-			log.Println("[Agent][WS Write]",err)
+			log.Println("[Agent][WS Write]", err)
 			return err
 		}
 		return err
@@ -176,13 +176,14 @@ func (agent *Agent) executeOverSSH(conn *websocket.Conn, cmd int64, reqCmd *ReqC
 	//执行脚本
 	bs, err := session.CombinedOutput(reqCmd.Scripts)
 	if err != nil {
-		log.Println("[Agent][SSH CombinedOutput]",err)
+		log.Println("[Agent][SSH CombinedOutput]", string(bs))
+		log.Println("[Agent][SSH CombinedOutput]", err)
 		err := agent.wsWrite(conn, cmd, &ResCmd{
-			Content:  err.Error(),
+			Content:  string(bs),
 			ExitCode: 3,
 		})
 		if err != nil {
-			log.Println("[Agent][WS Write]",err)
+			log.Println("[Agent][WS Write]", err)
 			return err
 		}
 		return err
@@ -194,7 +195,7 @@ func (agent *Agent) executeOverSSH(conn *websocket.Conn, cmd int64, reqCmd *ReqC
 		ExitCode: 0,
 	})
 	if err != nil {
-		log.Println("[Agent][WS Write]",err)
+		log.Println("[Agent][WS Write]", err)
 		return err
 	}
 
@@ -204,7 +205,7 @@ func (agent *Agent) executeOverSSH(conn *websocket.Conn, cmd int64, reqCmd *ReqC
 		ExitCode: 0,
 	})
 	if err != nil {
-		log.Println("[Agent][WS Write]",err)
+		log.Println("[Agent][WS Write]", err)
 		return err
 	}
 
@@ -214,7 +215,7 @@ func (agent *Agent) executeOverSSH(conn *websocket.Conn, cmd int64, reqCmd *ReqC
 		ExitCode: 0,
 	})
 	if err != nil {
-		log.Println("[Agent][WS Write]",err)
+		log.Println("[Agent][WS Write]", err)
 		return err
 	}
 	return nil
