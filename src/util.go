@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 )
@@ -30,13 +29,11 @@ func CombineScriptIntoOneLine(script string) string {
 	list := strings.Split(script, ";")
 	for i := 0; i < len(list); i++ {
 		trimed := strings.TrimRight(list[i], " ")
-		log.Println(trimed)
 		if trimed[len(trimed)-1:] == "\\" {
 			oneline += trimed[0 : len(trimed)-1]
 		} else {
 			oneline += trimed + ";"
 		}
 	}
-	log.Println(oneline)
 	return oneline
 }
