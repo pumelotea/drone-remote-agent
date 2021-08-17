@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/tidwall/gjson"
 	"github.com/wenzhenxi/gorsa"
 	"log"
 	"net/url"
@@ -20,6 +18,7 @@ type Client struct {
 	SSHUsername       string
 	SSHPassword       string
 	Scripts           string
+	RSA               *gorsa.RSASecurity
 }
 
 func NewClient(publicKeyFilePath string) *Client {
@@ -31,33 +30,13 @@ func NewClient(publicKeyFilePath string) *Client {
 	if err != nil {
 		log.Fatalln("[Client][Load PublicKey]", err)
 	}
+
+	client.RSA = &gorsa.RSASecurity{}
+	err = client.RSA.SetPublicKey(client.PublicKey)
+	if err != nil {
+		log.Fatalln("[Agent][RSA SetPublicKey]", err)
+	}
 	return client
-}
-
-func (client *Client) wsWrite(conn *websocket.Conn, cmd int64, reqCmd *ReqCmd) error {
-	reqData := ReqData{
-		Cmd:     cmd,
-		Payload: reqCmd,
-	}
-
-	b, err := json.Marshal(reqData)
-	if err != nil {
-		log.Fatalln("[Client][JSON Marshal]", err)
-		return err
-	}
-
-	eData, err := client.encode(b)
-	if err != nil {
-		log.Fatalln("[Client][Encode]", err)
-		return err
-	}
-
-	err = conn.WriteMessage(websocket.TextMessage, []byte(eData))
-	if err != nil {
-		log.Fatalln("[Client][WS Write]", err)
-		return err
-	}
-	return nil
 }
 
 func (client *Client) loadPublicKey() error {
@@ -81,85 +60,38 @@ func (client *Client) Connect() {
 	}
 	defer conn.Close()
 
-	done := make(chan struct{})
-
-	go func() {
-		defer close(done)
-		fmt.Println("==================execute logs==================")
-		for {
-			_, data, err := conn.ReadMessage()
-			if err != nil {
-				log.Println("[Client][WS ReadMessage]", err)
-				return
-			}
-
-			dData, err := client.decode(data)
-			if err != nil {
-				log.Println("[Client][Decode]", err)
-				return
-			}
-
-			cmd := gjson.Get(dData, "cmd").Int()
-			content := gjson.Get(dData, "payload.content").String()
-			exitCode := gjson.Get(dData, "payload.exitCode").Int()
-
-			resCmd := &ResCmd{
-				Content:  content,
-				ExitCode: exitCode,
-			}
-
-			// 主动断开
-			if cmd == 200 {
-				os.Exit(0)
-			}
-
-			fmt.Printf(resCmd.Content)
-
-			if resCmd.ExitCode != 0 {
-				os.Exit(int(resCmd.ExitCode))
-			}
-		}
-	}()
+	clientHandler := NewClientHandler(client, conn)
+	go clientHandler.Handle()
 
 	// 输出以下将要执行的脚本
+	scriptArr := strings.Split(client.Scripts, ";")
 
-	scriptArr := strings.Split(client.Scripts,";")
-
-	fmt.Println("=====================script=====================")
 	for i := 0; i < len(scriptArr); i++ {
 		fmt.Println(scriptArr[i])
 	}
 
-
-	// 发送消息
-	err = client.wsWrite(conn, 1, &ReqCmd{
-		SSHHost:     client.SSHHost,
-		SSHUsername: client.SSHUsername,
-		SSHPassword: client.SSHPassword,
-		Scripts:     client.Scripts,
-	})
-
+	err = clientHandler.reqHandShack()
 	if err != nil {
-		log.Fatalln("[Client][WS Write]", err)
+		log.Fatalln("[Client][ReqHandShack]", err)
 	}
 
-	<-done
+	<-clientHandler.Done
 }
 
-func (client *Client) decode(raw []byte) (string, error) {
-	dData, err := gorsa.PublicDecrypt(string(raw), client.PublicKey)
+func (client *Client) decode(raw []byte) ([]byte, error) {
+	dData, err := client.RSA.PubKeyDECRYPT(raw)
 	if err != nil {
 		log.Println("[Client][Decode]", err)
-		return "", err
+		return nil, err
 	}
 	return dData, nil
 }
 
-func (client *Client) encode(raw []byte) (string, error) {
-	eData, err := gorsa.PublicEncrypt(string(raw), client.PublicKey)
+func (client *Client) encode(raw []byte) ([]byte, error) {
+	eData, err := client.RSA.PubKeyENCTYPT(raw)
 	if err != nil {
 		log.Println("[Client][Encode]", err)
-		return "", err
+		return nil, err
 	}
 	return eData, nil
 }

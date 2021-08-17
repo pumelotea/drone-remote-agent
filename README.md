@@ -59,7 +59,7 @@ volumes:
 steps:
   - name: deploy-container
     pull: if-not-exists
-    image: pumelo/dra:1.0 #官方仓库有现有镜像
+    image: pumelo/dra:1.1
     volumes:
       - name: wsKey
         path: /dra
@@ -69,12 +69,14 @@ steps:
       ssh-username: root
       ssh-password: 123456
       publicKeyFilePath: /dra/rsa_public_key.pem
-      script:
+      script: # 远程执行脚本
         - docker pull 10.10.0.14:5000/nginx:1.15
         - docker run -d \
         - --name=test-nginx-a \
         - -p8877:80 \
         - 10.10.0.14:5000/nginx:1.15
+      upload: # 上传文件列表,只支持文件，文件夹会自动忽略 local:remote
+        - ./README.md:/data/README.md
 ```
 
 ## 参数表
