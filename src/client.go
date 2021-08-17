@@ -19,6 +19,7 @@ type Client struct {
 	SSHPassword       string
 	Scripts           string
 	RSA               *gorsa.RSASecurity
+	FileList          []string
 }
 
 func NewClient(publicKeyFilePath string) *Client {

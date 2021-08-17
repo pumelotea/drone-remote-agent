@@ -27,11 +27,12 @@ type ReqFileUploadCmd struct {
 	SSHHost     string `json:"sshHost"`
 	SSHUsername string `json:"sshUsername"`
 	SSHPassword string `json:"sshPassword"`
+	FilePath    string `json:"filePath"`
 	FileLength  int64  `json:"fileLength"`
 }
 
 type ResFileUploadCmd struct {
-	// 0请求发送，1继续发送下个分片，2超时，3错误，4重传，5，结束
+	// 0请求发送，1开始，2继续发送下个分片，3超时，4错误，5重传，6结束
 	Status int64 `json:"status"`
 }
 

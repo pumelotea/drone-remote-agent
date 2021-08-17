@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/tidwall/gjson"
 	"golang.org/x/crypto/ssh"
@@ -24,13 +25,13 @@ func NewAgentHandler(agent *Agent, conn *websocket.Conn) *AgentHandler {
 }
 
 func (handler *AgentHandler) Handle() {
-	// 处理器收到的数据一定解码后一定是文本json
 	for {
 		data, err := handler.read()
 		if err != nil {
 			log.Println("[Agent][Handle]", err)
-			break
+			goto End
 		}
+		// 处理器收到的数据一定解码后一定是文本json
 		dDataString := string(data)
 		log.Println("[Agent][Handle]", dDataString)
 		cmd := gjson.Get(dDataString, "cmd").Int()
@@ -40,20 +41,39 @@ func (handler *AgentHandler) Handle() {
 			err = handler.handshake(dDataString)
 			if err != nil {
 				log.Println("[Agent][HandShake]", err)
+				goto End
 			}
 		case 1:
 			//脚本请求
 			err = handler.execute(dDataString)
 			if err != nil {
 				log.Println("[Agent][Execute Over SSH]", err)
+				goto End
 			}
 		case 2:
 			//文件请求
 			//创建文件接收器
-			//并且阻塞大循环
+			fileReceiver := NewFileReceiver(handler.Agent, handler, dDataString)
+			go fileReceiver.Handle()
+			//响应开始传输
+			err = fileReceiver.responseFileUploadCmd(1)
+			if err != nil {
+				fmt.Println("[Agent][FileReceiver][Handle]", err)
+				goto End
+			}
+			//切换模式为文件传输
+			handler.Mode = 1
+
+			//阻塞大循环
+			<-fileReceiver.Done
+
+			//释放后还原为
+			handler.Mode = 0
 		}
 
 	}
+End:
+	log.Println("[Agent]", "WebSocket Closed")
 }
 
 func (handler *AgentHandler) handshake(dataString string) error {
@@ -94,6 +114,7 @@ func (handler *AgentHandler) execute(dataString string) error {
 		}
 		return err
 	}
+	defer client.Close()
 
 	session, err := client.NewSession()
 	if err != nil {
@@ -170,7 +191,7 @@ func (handler *AgentHandler) read() ([]byte, error) {
 		log.Println("[Agent][WS ReadMessage]", err)
 		return nil, err
 	}
-	log.Println("[Agent][WS Message Raw Byte Len]", len(data))
+	//log.Println("[Agent][WS Message Raw Byte Len]", len(data))
 
 	dData, err := handler.Agent.decode(data)
 	if err != nil {

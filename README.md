@@ -12,7 +12,7 @@
 
 ### 常规编译
 ```shell
-go build main.go agent.go client.go data.go util.go
+go build -o ./main ./src
 ```
 
 ### Docker编译封装
@@ -92,6 +92,7 @@ steps:
 --sshUsername, like root [ONLY CLIENT]
 --sshPassword, like 123456 [ONLY CLIENT]
 --script, like ls [ONLY CLIENT]
+--upload, like /local/path/file1:/remote/path/file1,...
 ```
 
 环境变量支持,与命令行参数一一对应
@@ -105,6 +106,7 @@ PLUGIN_SSH-HOST
 PLUGIN_SSH-USERNAME
 PLUGIN_SSH-PASSWORD
 PLUGIN_SCRIPT
+PLUGIN_UPLOAD
 ```
 
 如果同时使用2种传参方式，那么命令行参数优先于环境变量，空值会忽略。

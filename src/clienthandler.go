@@ -7,6 +7,7 @@ import (
 	"github.com/tidwall/gjson"
 	"log"
 	"os"
+	"strings"
 )
 
 type ClientHandler struct {
@@ -29,24 +30,40 @@ func NewClientHandler(client *Client, conn *websocket.Conn) *ClientHandler {
 func (handler *ClientHandler) Handle() {
 	defer close(handler.Done)
 	// 处理器收到的数据一定解码后一定是文本json
+	var fileSender *FileSender
+	var fileSendNum = 0
 	for {
 		data, err := handler.read()
 		if err != nil {
 			log.Println("[Client][Handle]", err)
-			break
+			goto End
 		}
 		dDataString := string(data)
-		log.Println("[Client][Handle]", dDataString)
+		//log.Println("[Client][Handle]", dDataString)
 		cmd := gjson.Get(dDataString, "cmd").Int()
 		switch cmd {
 		case 0:
 			//握手响应
 			success := handler.isHandShackSuccess(dDataString)
-			if success {
+			if !success {
+				log.Println("[Client][HandShack]", "failure")
+				goto End
+			}
+
+			// 如果文件数量为0，直接跳过文件上传
+			if len(handler.Client.FileList) > 0 {
 				// 请求发送文件
+				paths := strings.Split(handler.Client.FileList[fileSendNum], ":")
+				fileSender = NewFileSender(handler.Client, handler, paths[0], paths[1])
+				err = fileSender.requestFileUploadCmd()
+				if err != nil {
+					log.Println("[Client][Handle]", err)
+					goto End
+				}
+			} else {
 				err = handler.reqExecuteCmd()
 				if err != nil {
-					log.Println("[Agent][ReqExecuteCmd]", err)
+					log.Println("[Client][ReqExecuteCmd]", err)
 				}
 			}
 		case 1:
@@ -54,12 +71,39 @@ func (handler *ClientHandler) Handle() {
 			handler.processExecuteCmdRes(dDataString)
 		case 2:
 			//文件请求响应
+
 			//创建文件发送器
-			//并且阻塞大循环
+			go fileSender.Handle()
+			handler.Mode = 1
+			<-fileSender.Done
+			handler.Mode = 0
+
+			fileSendNum++
+			// 如果全部发送完毕
+			if fileSendNum == len(handler.Client.FileList) {
+				// 开始请求执行脚本
+				err = handler.reqExecuteCmd()
+				if err != nil {
+					log.Println("[Client][ReqExecuteCmd]", err)
+				}
+				break
+			} else {
+				//发送下一个文件
+				paths := strings.Split(handler.Client.FileList[fileSendNum], ":")
+				fileSender = NewFileSender(handler.Client, handler, paths[0], paths[1])
+				err = fileSender.requestFileUploadCmd()
+				if err != nil {
+					log.Println("[Client][Handle]", err)
+					goto End
+				}
+			}
+
 		case 200:
 			os.Exit(0)
 		}
+
 	}
+End:
 }
 
 func (handler *ClientHandler) read() ([]byte, error) {
@@ -72,7 +116,7 @@ func (handler *ClientHandler) read() ([]byte, error) {
 		log.Println("[Client][WS ReadMessage]", err)
 		return nil, err
 	}
-	log.Println("[Client][WS Message Raw Byte Len]", len(data))
+	//log.Println("[Client][WS Message Raw Byte Len]", len(data))
 
 	dData, err := handler.Client.decode(data)
 	if err != nil {
