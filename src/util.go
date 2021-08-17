@@ -37,3 +37,15 @@ func CombineScriptIntoOneLine(script string) string {
 	}
 	return oneline
 }
+
+func bar(count, size int) string {
+	str := ""
+	for i := 0; i < size; i++ {
+		if i < count {
+			str += "="
+		} else {
+			str += " "
+		}
+	}
+	return str
+}

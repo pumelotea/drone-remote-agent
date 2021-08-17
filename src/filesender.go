@@ -2,10 +2,12 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/tidwall/gjson"
 	"io"
 	"log"
 	"os"
+	"strconv"
 )
 
 type FileSender struct {
@@ -15,6 +17,7 @@ type FileSender struct {
 	FilePath       string
 	FileRemotePath string
 	FileLength     int64
+	UpLength       int64
 }
 
 func NewFileSender(client *Client, clientHandler *ClientHandler, filePath string, fileRemotePath string) *FileSender {
@@ -29,6 +32,7 @@ func NewFileSender(client *Client, clientHandler *ClientHandler, filePath string
 		FileRemotePath: fileRemotePath,
 		FileLength:     fileInfo.Size(),
 		Done:           make(chan struct{}),
+		UpLength:       0,
 	}
 }
 
@@ -36,6 +40,7 @@ func (sender *FileSender) Handle() {
 	defer close(sender.Done)
 	reader, file := sender.fileOverWs()
 	defer file.Close()
+
 	sender.sendBlock(reader)
 	for {
 		data, err := sender.ClientHandler.read()
@@ -90,14 +95,26 @@ func (sender *FileSender) fileOverWs() (*bufio.Reader, *os.File) {
 }
 
 func (sender *FileSender) sendBlock(reader *bufio.Reader) {
-	buf := make([]byte, 128)
+	buf := make([]byte, 2048)
 	n, err := reader.Read(buf)
-	log.Println("[Client][FileSender] send byte len", n)
+	sender.UpLength += int64(n)
+	sender.printPercent()
+	//log.Println("[Client][FileSender] sent -> ", sender.UpLength)
 	if err == io.EOF {
 		return
 	}
 	err = sender.ClientHandler.writeByte(buf[:n])
 	if err != nil {
 		log.Fatalln("[Client][FileSender]", err)
+	}
+}
+
+func (sender *FileSender) printPercent() {
+	var size int64 = 100
+	var num = int(sender.UpLength * 100 / sender.FileLength)
+	str := "[" + bar(num, int(size)) + "] " + strconv.Itoa(num) + "%"
+	fmt.Printf("\r%s", str)
+	if sender.UpLength == sender.FileLength {
+		fmt.Println()
 	}
 }
