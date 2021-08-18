@@ -68,19 +68,41 @@ func (agent *Agent) loadPrivateKey() error {
 }
 
 func (agent *Agent) decode(raw []byte) ([]byte, error) {
-	dData, err := agent.RSA.PriKeyDECRYPT(raw)
+	pack, err := UnPackBytes(raw)
 	if err != nil {
-		log.Println("[Agent][Decode]", err)
+		log.Println("[Agent][UnPackBytes]", err)
 		return nil, err
 	}
+
+	dPwd, err := agent.RSA.PriKeyDECRYPT(pack.Pwd)
+	if err != nil {
+		log.Println("[Agent][PriKeyDECRYPT]", err)
+		return nil, err
+	}
+
+	dData, err := AesDeCrypt(pack.Data, dPwd)
+	if err != nil {
+		log.Println("[Agent][AesDeCrypt]", err)
+		return nil, err
+	}
+
 	return dData, nil
 }
 
 func (agent *Agent) encode(raw []byte) ([]byte, error) {
-	eData, err := agent.RSA.PriKeyENCTYPT(raw)
+	pwd := GenerateAESPwd()
+	pData, err := AesEcrypt(raw, pwd)
+	if err != nil {
+		log.Println("[Agent][AesEcrypt]", err)
+		return nil, err
+	}
+
+	ePwd, err := agent.RSA.PriKeyENCTYPT(pwd)
 	if err != nil {
 		log.Println("[Agent][Encode]", err)
 		return nil, err
 	}
+
+	eData := PackBytes(ePwd, pData)
 	return eData, nil
 }

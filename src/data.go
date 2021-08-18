@@ -1,5 +1,11 @@
 package main
 
+type PackData struct {
+	Len  int
+	Pwd  []byte
+	Data []byte
+}
+
 type ReqData struct {
 	//0指令请求，1脚本请求，2文件请求
 	Cmd     int64       `json:"cmd"`

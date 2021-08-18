@@ -95,7 +95,7 @@ func (sender *FileSender) fileOverWs() (*bufio.Reader, *os.File) {
 }
 
 func (sender *FileSender) sendBlock(reader *bufio.Reader) {
-	buf := make([]byte, 2048)
+	buf := make([]byte, 102400)
 	n, err := reader.Read(buf)
 	sender.UpLength += int64(n)
 	sender.printPercent()

@@ -80,19 +80,40 @@ func (client *Client) Connect() {
 }
 
 func (client *Client) decode(raw []byte) ([]byte, error) {
-	dData, err := client.RSA.PubKeyDECRYPT(raw)
+	pack, err := UnPackBytes(raw)
 	if err != nil {
-		log.Println("[Client][Decode]", err)
+		log.Println("[Client][UnPackBytes]", err)
 		return nil, err
 	}
+
+	dPwd, err := client.RSA.PubKeyDECRYPT(pack.Pwd)
+	if err != nil {
+		log.Println("[Client][PubKeyDECRYPT]", err)
+		return nil, err
+	}
+
+	dData, err := AesDeCrypt(pack.Data, dPwd)
+	if err != nil {
+		log.Println("[Client][AesDeCrypt]", err)
+		return nil, err
+	}
+
 	return dData, nil
 }
 
 func (client *Client) encode(raw []byte) ([]byte, error) {
-	eData, err := client.RSA.PubKeyENCTYPT(raw)
+	pwd := GenerateAESPwd()
+	pData, err := AesEcrypt(raw, pwd)
 	if err != nil {
-		log.Println("[Client][Encode]", err)
+		log.Println("[Client][AesEcrypt]", err)
 		return nil, err
 	}
+	ePwd, err := client.RSA.PubKeyENCTYPT(pwd)
+	if err != nil {
+		log.Println("[Client][PubKeyENCTYPT]", err)
+		return nil, err
+	}
+
+	eData := PackBytes(ePwd, pData)
 	return eData, nil
 }
