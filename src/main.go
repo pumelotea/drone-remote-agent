@@ -2,9 +2,17 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strings"
+)
+
+var (
+	gitHash   string
+	buildTime string
+	goVersion string
+	version   string
 )
 
 // 默认是client模式
@@ -30,6 +38,16 @@ func init() {
 }
 
 func parseVar() {
+	args := os.Args
+	if len(args) == 2 && (args[1] == "--version" || args[1] == "-v") {
+		fmt.Printf("Welcome to Use Drone Remote Agent.\n")
+		fmt.Printf("Version: %s \n", version)
+		fmt.Printf("Git Commit Hash: %s \n", gitHash)
+		fmt.Printf("Build TimeStamp: %s \n", buildTime)
+		fmt.Printf("GoLang Version: %s \n", goVersion)
+		mode = "version"
+		return
+	}
 	parseEnvVar()
 	_mode := flag.String("mode", "client", "--mode agent/client, default is client")
 	_prk := flag.String("prk", "", "--prk privateKeyFilePath, like /path/foo")
@@ -74,25 +92,22 @@ func parseEnvVar() {
 func main() {
 	switch mode {
 	case "client":
-		{
-			client := NewClient(publicKeyFilePath)
-			client.AgentEndpoint = agentEndpoint
-			client.SSHHost = sshHost
-			client.SSHUsername = sshUsername
-			client.SSHPassword = sshPassword
-			client.Scripts = scripts
-			if len(uploads) > 0 {
-				client.FileList = strings.Split(uploads, ",")
-			}
-			client.Connect()
+		client := NewClient(publicKeyFilePath)
+		client.AgentEndpoint = agentEndpoint
+		client.SSHHost = sshHost
+		client.SSHUsername = sshUsername
+		client.SSHPassword = sshPassword
+		client.Scripts = scripts
+		if len(uploads) > 0 {
+			client.FileList = strings.Split(uploads, ",")
 		}
+		client.Connect()
+	case "version":
 	default:
-		{
-			agent := NewAgent(listenAddr, privateKeyFilePath)
-			err := agent.Serve()
-			if err != nil {
-				log.Fatalln("[Agent][Serve]", err)
-			}
+		agent := NewAgent(listenAddr, privateKeyFilePath)
+		err := agent.Serve()
+		if err != nil {
+			log.Fatalln("[Agent][Serve]", err)
 		}
 	}
 }
