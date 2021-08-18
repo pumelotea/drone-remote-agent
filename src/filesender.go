@@ -115,6 +115,6 @@ func (sender *FileSender) printPercent() {
 	str := fmt.Sprintf("[%s] %.2f%%", bar(int(p*float64(size)), size), p*100)
 	fmt.Printf("\r%s", str)
 	if sender.UpLength == sender.FileLength {
-		fmt.Println()
+		fmt.Println(" ✅ ")
 	}
 }
