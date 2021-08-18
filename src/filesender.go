@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 )
 
 type FileSender struct {
@@ -110,9 +109,10 @@ func (sender *FileSender) sendBlock(reader *bufio.Reader) {
 }
 
 func (sender *FileSender) printPercent() {
-	var size int64 = 100
-	var num = int(sender.UpLength * 100 / sender.FileLength)
-	str := "[" + bar(num, int(size)) + "] " + strconv.Itoa(num) + "%"
+	var size = 50
+	var p = float64(sender.UpLength) / float64(sender.FileLength)
+
+	str := fmt.Sprintf("[%s] %.2f%%", bar(int(p*float64(size)), size), p*100)
 	fmt.Printf("\r%s", str)
 	if sender.UpLength == sender.FileLength {
 		fmt.Println()
