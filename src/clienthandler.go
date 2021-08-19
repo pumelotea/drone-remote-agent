@@ -135,6 +135,10 @@ func (handler *ClientHandler) writeByte(data []byte) error {
 	return handler.Conn.WriteMessage(websocket.BinaryMessage, eData)
 }
 
+func (handler *ClientHandler) writeRaw(data []byte) error {
+	return handler.Conn.WriteMessage(websocket.BinaryMessage, data)
+}
+
 func (handler *ClientHandler) writeRequest(cmd int64, reqData interface{}) error {
 	res := ReqData{
 		Cmd:     cmd,

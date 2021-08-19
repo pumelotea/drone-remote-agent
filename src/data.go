@@ -50,3 +50,8 @@ type ResHandShakeCmd struct {
 	// 0 失败，1通过
 	Status int64 `json:"status"`
 }
+
+type FileBlock struct {
+	RawLen     int
+	EnCodeData []byte
+}
