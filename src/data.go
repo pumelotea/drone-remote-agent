@@ -55,3 +55,11 @@ type FileBlock struct {
 	RawLen     int
 	EnCodeData []byte
 }
+
+type DashboardDataItem struct {
+	Id       string
+	Mode     int64
+	RDataLen int64
+	SDataLen int64
+	IP       string
+}

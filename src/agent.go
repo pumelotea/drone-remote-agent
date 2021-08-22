@@ -13,6 +13,7 @@ type Agent struct {
 	PrivateKeyFilePath string
 	wsUpGrader         *websocket.Upgrader
 	RSA                *gorsa.RSASecurity
+	Manager            *AgentManager
 }
 
 func NewAgent(addr string, privateKeyFilePath string) *Agent {
@@ -27,6 +28,7 @@ func NewAgent(addr string, privateKeyFilePath string) *Agent {
 		PrivateKey:         "",
 		PrivateKeyFilePath: privateKeyFilePath,
 		wsUpGrader:         &upGrader,
+		Manager:            NewAgentManager(),
 	}
 
 	// 加载证书-私钥
@@ -44,6 +46,7 @@ func NewAgent(addr string, privateKeyFilePath string) *Agent {
 
 func (agent *Agent) Serve() error {
 	http.HandleFunc("/agent", agent.wsHandle)
+	http.HandleFunc("/dashboard", agent.dashHandle)
 	return http.ListenAndServe(agent.Addr, nil)
 }
 
@@ -105,4 +108,12 @@ func (agent *Agent) encode(raw []byte) ([]byte, error) {
 
 	eData := PackBytes(ePwd, pData)
 	return eData, nil
+}
+
+func (agent *Agent) dashHandle(w http.ResponseWriter, r *http.Request) {
+	data, err := agent.Manager.JSON()
+	if err != nil {
+		log.Println("[Agent][DashHandle]", err)
+	}
+	w.Write(data)
 }

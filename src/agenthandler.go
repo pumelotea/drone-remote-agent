@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-basic/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/tidwall/gjson"
 	"golang.org/x/crypto/ssh"
@@ -10,21 +11,31 @@ import (
 )
 
 type AgentHandler struct {
-	Agent *Agent
-	Conn  *websocket.Conn
-	//0普通模式，1文件传输模式
-	Mode int64
+	Id       string
+	Agent    *Agent
+	Conn     *websocket.Conn
+	Mode     int64 //0普通模式，1文件传输模式
+	RDataLen int64 // 统计数据
+	SDataLen int64
+	IP       string
 }
 
 func NewAgentHandler(agent *Agent, conn *websocket.Conn) *AgentHandler {
-	return &AgentHandler{
-		Agent: agent,
-		Conn:  conn,
-		Mode:  0,
+	handler := &AgentHandler{
+		Id:       uuid.New(),
+		Agent:    agent,
+		Conn:     conn,
+		Mode:     0,
+		RDataLen: 0,
+		SDataLen: 0,
+		IP:       conn.RemoteAddr().String(),
 	}
+	agent.Manager.Register(handler)
+	return handler
 }
 
 func (handler *AgentHandler) Handle() {
+	defer handler.Agent.Manager.UnRegister(handler)
 	for {
 		data, err := handler.read()
 		if err != nil {
@@ -183,6 +194,8 @@ func (handler *AgentHandler) execute(dataString string) error {
 
 func (handler *AgentHandler) read() ([]byte, error) {
 	mt, data, err := handler.Conn.ReadMessage()
+	// 接收流量计数器
+	handler.RDataLen += int64(len(data))
 	if mt != websocket.BinaryMessage {
 		log.Println("[Agent][WS ReadMessage]", "MsgType Not BinaryMessage")
 		return nil, err
@@ -207,6 +220,8 @@ func (handler *AgentHandler) writeByte(data []byte) error {
 		log.Println("[Agent][Encode]", err)
 		return err
 	}
+	// 发送流量计数器
+	handler.SDataLen += int64(len(eData))
 	return handler.Conn.WriteMessage(websocket.BinaryMessage, eData)
 }
 
