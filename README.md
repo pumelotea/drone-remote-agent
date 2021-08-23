@@ -59,7 +59,7 @@ volumes:
 steps:
   - name: deploy-container
     pull: if-not-exists
-    image: pumelo/dra:1.1
+    image: pumelo/dra:1.3.2
     volumes:
       - name: wsKey
         path: /dra
