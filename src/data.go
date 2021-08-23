@@ -62,4 +62,13 @@ type DashboardDataItem struct {
 	RDataLen int64
 	SDataLen int64
 	IP       string
+	FileList []*DashboardDataFileItem
+}
+
+type DashboardDataFileItem struct {
+	SSHHost       string
+	SSHUsername   string
+	FilePath      string
+	FileLength    int64
+	ReceiveLength int64
 }

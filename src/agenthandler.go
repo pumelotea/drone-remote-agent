@@ -11,13 +11,14 @@ import (
 )
 
 type AgentHandler struct {
-	Id       string
-	Agent    *Agent
-	Conn     *websocket.Conn
-	Mode     int64 //0普通模式，1文件传输模式
-	RDataLen int64 // 统计数据
-	SDataLen int64
-	IP       string
+	Id               string
+	Agent            *Agent
+	Conn             *websocket.Conn
+	Mode             int64 //0普通模式，1文件传输模式
+	RDataLen         int64 // 统计数据
+	SDataLen         int64
+	IP               string
+	FileReceiverList []*FileReceiver
 }
 
 func NewAgentHandler(agent *Agent, conn *websocket.Conn) *AgentHandler {
@@ -65,6 +66,7 @@ func (handler *AgentHandler) Handle() {
 			//文件请求
 			//创建文件接收器
 			fileReceiver := NewFileReceiver(handler.Agent, handler, dDataString)
+			handler.FileReceiverList = append(handler.FileReceiverList, fileReceiver)
 			go fileReceiver.Handle()
 			//响应开始传输
 			err = fileReceiver.responseFileUploadCmd(1)

@@ -9,14 +9,15 @@ import (
 )
 
 type FileReceiver struct {
-	Agent        *Agent
-	AgentHandler *AgentHandler
-	Done         chan struct{}
-	SSHHost      string
-	SSHUsername  string
-	SSHPassword  string
-	FilePath     string
-	FileLength   int64
+	Agent         *Agent
+	AgentHandler  *AgentHandler
+	Done          chan struct{}
+	SSHHost       string
+	SSHUsername   string
+	SSHPassword   string
+	FilePath      string
+	FileLength    int64
+	ReceiveLength int64
 }
 
 func NewFileReceiver(agent *Agent, agentHandler *AgentHandler, params string) *FileReceiver {
@@ -27,14 +28,15 @@ func NewFileReceiver(agent *Agent, agentHandler *AgentHandler, params string) *F
 	fileLength := gjson.Get(params, "payload.fileLength").Int()
 
 	return &FileReceiver{
-		Agent:        agent,
-		AgentHandler: agentHandler,
-		Done:         make(chan struct{}),
-		SSHHost:      sshHost,
-		SSHUsername:  sshUsername,
-		SSHPassword:  sshPassword,
-		FilePath:     filePath,
-		FileLength:   fileLength,
+		Agent:         agent,
+		AgentHandler:  agentHandler,
+		Done:          make(chan struct{}),
+		SSHHost:       sshHost,
+		SSHUsername:   sshUsername,
+		SSHPassword:   sshPassword,
+		FilePath:      filePath,
+		FileLength:    fileLength,
+		ReceiveLength: 0,
 	}
 }
 
@@ -50,7 +52,6 @@ func (receiver *FileReceiver) Handle() {
 	defer sshClient.Close()
 	defer sftpClient.Close()
 
-	var sendLen int64 = 0
 	//开启数据读取推送循环
 	for {
 		// 文件接收器的数据一定为二进制数据块
@@ -61,8 +62,8 @@ func (receiver *FileReceiver) Handle() {
 		}
 		log.Println("[Agent][FileReceiver] Data Len =", len(data))
 		n, err := dstFile.Write(data)
-		sendLen += int64(n)
-		if sendLen == receiver.FileLength {
+		receiver.ReceiveLength += int64(n)
+		if receiver.ReceiveLength == receiver.FileLength {
 			err = receiver.responseFileUploadCmd(6)
 			break
 		} else {

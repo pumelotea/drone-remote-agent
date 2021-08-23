@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type AgentManager struct {
@@ -25,14 +24,25 @@ func (manager *AgentManager) UnRegister(handler *AgentHandler) {
 
 func (manager *AgentManager) JSON() ([]byte, error) {
 	list := make([]*DashboardDataItem, 0)
-	for k, v := range manager.AgentHandlerPool {
-		fmt.Println(k, v)
+	for _, v := range manager.AgentHandlerPool {
+		fileList := make([]*DashboardDataFileItem, 0)
+		for i := 0; i < len(v.FileReceiverList); i++ {
+			fileList = append(fileList, &DashboardDataFileItem{
+				SSHHost:       v.FileReceiverList[i].SSHHost,
+				SSHUsername:   v.FileReceiverList[i].SSHUsername,
+				FilePath:      v.FileReceiverList[i].FilePath,
+				FileLength:    v.FileReceiverList[i].FileLength,
+				ReceiveLength: v.FileReceiverList[i].ReceiveLength,
+			})
+		}
+
 		list = append(list, &DashboardDataItem{
 			Id:       v.Id,
 			Mode:     v.Mode,
 			RDataLen: v.RDataLen,
 			SDataLen: v.SDataLen,
 			IP:       v.IP,
+			FileList: fileList,
 		})
 	}
 	return json.Marshal(list)
