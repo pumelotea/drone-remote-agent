@@ -72,6 +72,18 @@
     </div>
   </el-card>
   <el-empty description="暂无连接" v-if="list.length === 0"></el-empty>
+  <el-dialog
+    title="连接 Dra Agent"
+    v-model="show"
+    width="30%"
+    :before-close="handleClose">
+    <el-input v-model="addr" placeholder="Agent IP:Port"></el-input>
+    <template #footer>
+    <span class="dialog-footer">
+      <el-button type="primary" @click="connect">连接</el-button>
+    </span>
+    </template>
+  </el-dialog>
 </div>
 
 <script src="https://unpkg.com/vue@next"></script>
@@ -80,7 +92,9 @@
     const app = Vue.createApp({
         data() {
             return {
-                list: []
+                list: [],
+                addr: "",
+                show: false
             }
         },
         methods: {
@@ -99,18 +113,28 @@
                 return (fileSize / Math.pow(num, 4)).toFixed(2) + "T";
             },
             refresh() {
-                fetch('//127.0.0.1:8080/dashboard')
+                fetch(`//${this.addr}/dashboard`)
                     .then(response => {
                         return response.json()
                     })
                     .then(data => {
                         this.list = data
                     })
+            },
+            connect() {
+                this.show = false
+                setInterval(this.refresh, 1000)
+                localStorage.setItem("agent-addr", this.addr)
             }
         },
         mounted() {
             console.log("page init")
-            setInterval(this.refresh, 1000)
+            this.addr = localStorage.getItem("agent-addr") || ''
+            if (this.addr) {
+                setInterval(this.refresh, 1000)
+            } else {
+                this.show = true
+            }
         }
     })
     app.use(ElementPlus)
