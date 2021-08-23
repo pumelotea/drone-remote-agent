@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dra Dashboard</title>
+  <style>
+      body {
+          display: flex;
+          padding: 20px;
+          box-sizing: border-box;
+      }
+
+      #app {
+          max-width: 960px;
+          width: 100%;
+          margin: auto;
+      }
+
+      .item + .item {
+          margin-top: 10px;
+      }
+
+      .flex-center {
+          display: flex;
+          align-items: center
+      }
+
+      .mr-10 {
+          margin-right: 10px
+      }
+
+      .ml-10 {
+          margin-right: 10px
+      }
+
+      .f-b {
+          font-weight: bold;
+      }
+
+      .icon {
+          font-size: 18px !important;
+          font-weight: bold !important;
+      }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/lib/theme-chalk/index.css">
+</head>
+<body>
+<div id="app">
+  <el-card class="item" shadow="never" v-for="e in list">
+    <div class="flex-center">
+      <div class="flex-center">
+        <div class="mr-10">
+          <el-icon class="el-icon-connection icon"></el-icon>
+        </div>
+        <div class="f-b mr-10">{{e.IP}}</div>
+        <el-tag size="small" v-if="e.Mode === 1">传输模式</el-tag>
+        <el-tag size="small" type="warning" v-else>指令模式</el-tag>
+      </div>
+      <div style="flex: 1"></div>
+      <div class="flex-center ml-10">
+        <div class="flex-center mr-10">
+          <el-icon class="el-icon-bottom icon"></el-icon>
+        </div>
+        <div style="font-weight: bold">{{human(e.RDataLen)}}</div>
+      </div>
+      <div class="flex-center ml-10">
+        <div class="flex-center mr-10">
+          <el-icon class="el-icon-top icon"></el-icon>
+        </div>
+        <div class="f-b">{{human(e.SDataLen)}}</div>
+      </div>
+    </div>
+  </el-card>
+  <el-empty description="暂无连接" v-if="list.length === 0"></el-empty>
+</div>
+
+<script src="https://unpkg.com/vue@next"></script>
+<script src="https://unpkg.com/element-plus/lib/index.full.js"></script>
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                list: []
+            }
+        },
+        methods: {
+            human(size) {
+                if (!size) return "-";
+                const fileSize = Number(size)
+                let num = 1024.00;
+                if (fileSize < num)
+                    return fileSize + "B";
+                if (fileSize < Math.pow(num, 2))
+                    return (fileSize / num).toFixed(2) + "KB";
+                if (fileSize < Math.pow(num, 3))
+                    return (fileSize / Math.pow(num, 2)).toFixed(2) + "MB";
+                if (fileSize < Math.pow(num, 4))
+                    return (fileSize / Math.pow(num, 3)).toFixed(2) + "G";
+                return (fileSize / Math.pow(num, 4)).toFixed(2) + "T";
+            },
+            refresh() {
+                fetch('//127.0.0.1:8080/dashboard')
+                    .then(response => {
+                        return response.json()
+                    })
+                    .then(data => {
+                        this.list = data
+                    })
+            }
+        },
+        mounted() {
+            console.log("page init")
+            setInterval(this.refresh, 1000)
+        }
+    })
+    app.use(ElementPlus)
+    app.mount('#app')
+
+</script>
+</body>
+</html>

@@ -111,6 +111,7 @@ func (agent *Agent) encode(raw []byte) ([]byte, error) {
 }
 
 func (agent *Agent) dashHandle(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	data, err := agent.Manager.JSON()
 	if err != nil {
 		log.Println("[Agent][DashHandle]", err)
