@@ -110,3 +110,14 @@ PLUGIN_UPLOAD
 ```
 
 如果同时使用2种传参方式，那么命令行参数优先于环境变量，空值会忽略。
+
+## 监控
+监控页面可以用来查看实时的连接信息，
+在浏览器中访问
+```
+http://agent-ip:port/status
+```
+输入`agent-ip:port`
+点击连接即可。
+
+![img.png](images/img.png)
