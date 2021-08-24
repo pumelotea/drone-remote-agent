@@ -74,7 +74,7 @@
       <el-collapse >
         <el-collapse-item title="文件传输列表">
           <div v-for="file in e.FileList">
-            <div>{{file.SSHUsername}}@{{file.SSHHost}}:{{file.FilePath}}</div>
+            <div>{{file.SSHUsername}}@{{file.SSHHost}}:{{file.FilePath}} [ 文件大小: {{human(file.FileLength)}} ]</div>
             <el-progress :percentage="percent(file)"></el-progress>
           </div>
         </el-collapse-item>
@@ -144,7 +144,9 @@
 
                         })
                         this.time = t
-                        this.list = data
+                        this.list = data.sort((a,b)=>{
+                            return a.CreatedAt - b.CreatedAt
+                        })
                     })
             },
             connect() {

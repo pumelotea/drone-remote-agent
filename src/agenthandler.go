@@ -8,6 +8,7 @@ import (
 	"github.com/tidwall/gjson"
 	"golang.org/x/crypto/ssh"
 	"log"
+	"time"
 )
 
 type AgentHandler struct {
@@ -19,17 +20,19 @@ type AgentHandler struct {
 	SDataLen         int64
 	IP               string
 	FileReceiverList []*FileReceiver
+	CreatedAt        int64
 }
 
 func NewAgentHandler(agent *Agent, conn *websocket.Conn) *AgentHandler {
 	handler := &AgentHandler{
-		Id:       uuid.New(),
-		Agent:    agent,
-		Conn:     conn,
-		Mode:     0,
-		RDataLen: 0,
-		SDataLen: 0,
-		IP:       conn.RemoteAddr().String(),
+		Id:        uuid.New(),
+		Agent:     agent,
+		Conn:      conn,
+		Mode:      0,
+		RDataLen:  0,
+		SDataLen:  0,
+		IP:        conn.RemoteAddr().String(),
+		CreatedAt: time.Now().Unix(),
 	}
 	agent.Manager.Register(handler)
 	return handler

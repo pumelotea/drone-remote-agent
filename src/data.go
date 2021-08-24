@@ -57,12 +57,13 @@ type FileBlock struct {
 }
 
 type DashboardDataItem struct {
-	Id       string
-	Mode     int64
-	RDataLen int64
-	SDataLen int64
-	IP       string
-	FileList []*DashboardDataFileItem
+	Id        string
+	Mode      int64
+	RDataLen  int64
+	SDataLen  int64
+	IP        string
+	FileList  []*DashboardDataFileItem
+	CreatedAt int64
 }
 
 type DashboardDataFileItem struct {

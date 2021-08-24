@@ -37,12 +37,13 @@ func (manager *AgentManager) JSON() ([]byte, error) {
 		}
 
 		list = append(list, &DashboardDataItem{
-			Id:       v.Id,
-			Mode:     v.Mode,
-			RDataLen: v.RDataLen,
-			SDataLen: v.SDataLen,
-			IP:       v.IP,
-			FileList: fileList,
+			Id:        v.Id,
+			Mode:      v.Mode,
+			RDataLen:  v.RDataLen,
+			SDataLen:  v.SDataLen,
+			IP:        v.IP,
+			FileList:  fileList,
+			CreatedAt: v.CreatedAt,
 		})
 	}
 	return json.Marshal(list)
