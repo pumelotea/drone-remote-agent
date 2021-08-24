@@ -136,8 +136,8 @@
                         data.forEach((e,p)=>{
                             for (let i = 0; i < this.list.length; i++) {
                                 if (e.Id === this.list[i].Id){
-                                    data[p].speedR = this.human((e.RDataLen - this.list[i].RDataLen) / (t - this.time)*1000)
-                                    data[p].speedS = this.human((e.SDataLen - this.list[i].SDataLen) / (t - this.time)*1000)
+                                    data[p].speedR = this.human(((e.RDataLen - this.list[i].RDataLen) / (t - this.time)*1000).toFixed(2))
+                                    data[p].speedS = this.human(((e.SDataLen - this.list[i].SDataLen) / (t - this.time)*1000).toFixed(2))
                                     break
                                 }
                             }
