@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/wenzhenxi/gorsa"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -54,7 +55,9 @@ func (client *Client) Connect() {
 	u := url.URL{Scheme: "ws", Host: client.AgentEndpoint, Path: "/agent"}
 	log.Printf("[Client] connecting to %s \n", u.String())
 
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	header := http.Header{}
+	header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36 Edg/103.0.1264.62")
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), header)
 	if err != nil {
 		log.Println("[Client][WS Dial]", err)
 		os.Exit(100)
