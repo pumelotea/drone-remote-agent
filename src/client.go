@@ -6,7 +6,6 @@ import (
 	"github.com/wenzhenxi/gorsa"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 )
@@ -52,12 +51,12 @@ func (client *Client) loadPublicKey() error {
 }
 
 func (client *Client) Connect() {
-	u := url.URL{Scheme: "ws", Host: client.AgentEndpoint, Path: "/agent"}
-	log.Printf("[Client] connecting to %s \n", u.String())
+	u := "ws://" + client.AgentEndpoint + "/agent"
+	log.Printf("[Client] connecting to %s \n", u)
 
 	header := http.Header{}
 	header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36 Edg/103.0.1264.62")
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), header)
+	conn, _, err := websocket.DefaultDialer.Dial(u, header)
 	if err != nil {
 		log.Println("[Client][WS Dial]", err)
 		os.Exit(100)

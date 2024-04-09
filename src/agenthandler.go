@@ -48,7 +48,7 @@ func (handler *AgentHandler) Handle() {
 		}
 		// 处理器收到的数据一定解码后一定是文本json
 		dDataString := string(data)
-		log.Println("[Agent][Handle]", dDataString)
+		//log.Println("[Agent][Handle]", dDataString)
 		cmd := gjson.Get(dDataString, "cmd").Int()
 		switch cmd {
 		case 0:
