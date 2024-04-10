@@ -32,6 +32,7 @@ var sshPassword string
 var scripts string
 var uploads string
 var listenAddr = "0.0.0.0:8080"
+var useSSL = false
 
 func init() {
 	parseVar()
@@ -53,6 +54,7 @@ func parseVar() {
 	_prk := flag.String("prk", "", "--prk privateKeyFilePath, like /path/foo")
 	_pbk := flag.String("pbk", "", "--pbk publicKeyFilePath, like /path/foo")
 	_endpoint := flag.String("endpoint", "", "--endpoint, like 127.0.0.1:8080")
+	_useSSL := flag.String("useSSL", "", "--useSSL, like true")
 	_listen := flag.String("listen", "0.0.0.0:8080", "--listen, like 0.0.0.0:8080")
 	_sshHost := flag.String("sshHost", "", "--sshHost, like 0.0.0.0:8080")
 	_sshUsername := flag.String("sshUsername", "", "--sshUsername, like root")
@@ -65,6 +67,9 @@ func parseVar() {
 	privateKeyFilePath = NotEmptyCopy(privateKeyFilePath, *_prk)
 	publicKeyFilePath = NotEmptyCopy(publicKeyFilePath, *_pbk)
 	agentEndpoint = NotEmptyCopy(agentEndpoint, *_endpoint)
+	if *_useSSL != "" {
+		useSSL = NotEmptyCopy(listenAddr, *_useSSL) == "true"
+	}
 	listenAddr = NotEmptyCopy(listenAddr, *_listen)
 	sshHost = NotEmptyCopy(sshHost, *_sshHost)
 	sshUsername = NotEmptyCopy(sshUsername, *_sshUsername)
@@ -80,6 +85,7 @@ func parseEnvVar() {
 	privateKeyFilePath = os.Getenv("PLUGIN_PRIVATEKEYFILEPATH")
 	publicKeyFilePath = os.Getenv("PLUGIN_PUBLICKEYFILEPATH")
 	agentEndpoint = os.Getenv("PLUGIN_AGENT-ENDPOINT")
+	useSSL = os.Getenv("PLUGIN_USE-SSL") == "true"
 	listenAddr = os.Getenv("PLUGIN_LISTENADDR")
 	sshHost = os.Getenv("PLUGIN_SSH-HOST")
 	sshUsername = os.Getenv("PLUGIN_SSH-USERNAME")
@@ -94,6 +100,7 @@ func main() {
 	case "client":
 		client := NewClient(publicKeyFilePath)
 		client.AgentEndpoint = agentEndpoint
+		client.UseSSL = useSSL
 		client.SSHHost = sshHost
 		client.SSHUsername = sshUsername
 		client.SSHPassword = sshPassword

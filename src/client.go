@@ -14,6 +14,7 @@ type Client struct {
 	PublicKey         string
 	PublicKeyFilePath string
 	AgentEndpoint     string
+	UseSSL            bool
 	SSHHost           string
 	SSHUsername       string
 	SSHPassword       string
@@ -51,7 +52,13 @@ func (client *Client) loadPublicKey() error {
 }
 
 func (client *Client) Connect() {
-	u := "ws://" + client.AgentEndpoint + "/agent"
+	u := client.AgentEndpoint + "/agent"
+	println(client.UseSSL)
+	if client.UseSSL {
+		u = "wss://" + u
+	} else {
+		u = "ws://" + u
+	}
 	log.Printf("[Client] connecting to %s \n", u)
 
 	header := http.Header{}
